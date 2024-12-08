@@ -3,16 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./style.css" />
     <title>Document</title>
   </head>
-  <link rel="stylesheet" href="style.css" />
-  <title>Document</title>
   <body>
-    <!-- Show the camera feed to help the user capture the barcode -->
-    <video autoplay></video>
+    <div id="barcode-scanner"></div>
+    <audio id="beep-sound" src="./sounds/beep.mp3" preload="auto"></audio>
 
-    <!-- Let's simply display the barcode data and have "Waiting..." as placeholder. -->
-    <p id="barcode">Waiting...</p>
+    <p id="result">Scanned Barcode: <span id="barcode-result"></span></p>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

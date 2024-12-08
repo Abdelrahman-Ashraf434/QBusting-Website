@@ -1,67 +1,60 @@
-try {
-    // Check if BarcodeDetector is supported or use polyfill
-    if (!('BarcodeDetector' in window)) {
-        window['BarcodeDetector'] = barcodeDetectorPolyfill.BarcodeDetectorPolyfill;
-    }
-} catch (e) {
-    console.error("BarcodeDetector is not available and polyfill is missing:", e);
-}
-
-// Define the video element
-const video = document.querySelector('video');
-
-try {
-    // Get a stream for the rear camera
-    video.srcObject = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' }
-    });
-} catch (e) {
-    console.error("Unable to access the camera:", e);
-    alert("Camera access is required to scan barcodes.");
-    return;
-}
-
-// Initialize BarcodeDetector with correct format array
-const barcodeDetector = new BarcodeDetector({
-    formats: ["ean_13", "ean_8", "upc_a", "upc_e"]
-});
-
-const barcodeDisplay = document.getElementById("barcode");
-
-if (!barcodeDisplay) {
-    console.error("The element to display the barcode (with ID 'barcode') is missing.");
-    alert("Please add an element with ID 'barcode' to display scanned barcodes.");
-    return;
-}
-
-// Function to scan barcodes
-async function scanBarcodes() {
-    while (true) {
-        try {
-            // Detect barcodes in the current video frame
-            const barcodes = await barcodeDetector.detect(video);
-
-            if (barcodes.length > 0) {
-                // Display the first barcode found
-                barcodeDisplay.innerText = barcodes[0].rawValue;
-
-                // Notify the user a barcode has been found
-                navigator.vibrate(200);
-
-                // Wait before scanning another barcode
-                await new Promise(r => setTimeout(r, 1000));
-            } else {
-                // Short delay before trying to scan again
-                await new Promise(r => setTimeout(r, 50));
-            }
-        } catch (e) {
-            console.error("Error during barcode detection:", e);
-
-            // Delay before retrying detection
-            await new Promise(r => setTimeout(r, 200));
+document.addEventListener("DOMContentLoaded", function () {
+  if (
+    navigator.mediaDevices &&
+    typeof navigator.mediaDevices.getUserMedia === "function"
+  ) {
+    // Initialize QuaggaJS
+    Quagga.init(
+      {
+        inputStream: {
+          name: "Live",
+          type: "LiveStream",
+          target: document.querySelector("#barcode-scanner"),
+          constraints: {
+            facingMode: "environment", // Use rear camera
+          },
+        },
+        decoder: {
+          readers: [
+            "code_128_reader", // Add other barcode formats as needed
+            "ean_reader",
+            "ean_8_reader",
+            "code_39_reader",
+            "code_39_vin_reader",
+            "codabar_reader",
+            "upc_reader",
+            "upc_e_reader",
+            "i2of5_reader",
+            "2of5_reader",
+            "code_93_reader",
+          ],
+        },
+      },
+      function (err) {
+        if (err) {
+          console.error(err);
+          return;
         }
-    }
-}
+        console.log("QuaggaJS initialized.");
+        Quagga.start(); // Start scanning
+      }
+    );
 
-// Start scanning
-scanBarcodes();
+    // Process barcode detection
+    Quagga.onDetected(function (data) {
+      console.log("Barcode detected: ", data.codeResult.code);
+
+      // Display the barcode result
+      document.getElementById("barcode-result").textContent =
+        data.codeResult.code;
+      const beepSound = new Audio("./beep-07a.mp3"); // Path to your sound file
+      beepSound.play();
+      // Stop the scanner after detecting a barcode
+      Quagga.stop();
+      document.getElementById("barcode-scanner").style.display = "none";
+      console.log("Scanner stopped.");
+    });
+  } else {
+    console.error("getUserMedia not supported by this browser.");
+  }
+});
