@@ -12,8 +12,8 @@ document.addEventListener("DOMContentLoaded", function () {
           target: document.querySelector("#barcode-scanner"),
           constraints: {
             facingMode: "environment",
-            width: 800,
-            height: 200,
+            width: 200,
+            height: 800,
           },
         },
         locator: {
