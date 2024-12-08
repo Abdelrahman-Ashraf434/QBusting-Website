@@ -3,33 +3,32 @@ document.addEventListener("DOMContentLoaded", function () {
     navigator.mediaDevices &&
     typeof navigator.mediaDevices.getUserMedia === "function"
   ) {
-    // Initialize QuaggaJS
     Quagga.init(
       {
         inputStream: {
           name: "Live",
           type: "LiveStream",
-          target: document.querySelector("#barcode-scanner"), // Attach the scanner to the div
+          target: document.querySelector("#barcode-scanner"),
           constraints: {
-            facingMode: "environment", // Use the rear camera
-            width: 1280, // High resolution for better accuracy
+            facingMode: "environment",
+            width: 1280,
             height: 720,
           },
         },
         locator: {
-          patchSize: "medium", // Small, medium, large: adjust as necessary
-          halfSample: false, // Disable half-sample for full accuracy
+          patchSize: "medium",
+          halfSample: false,
         },
         decoder: {
           readers: [
-            "code_128_reader", // Common barcode formats
+            "code_128_reader",
             "ean_reader",
             "ean_8_reader",
             "upc_reader",
             "upc_e_reader",
           ],
         },
-        locate: true, // Enable barcode localization
+        locate: true,
       },
       function (err) {
         if (err) {
@@ -37,78 +36,61 @@ document.addEventListener("DOMContentLoaded", function () {
           return;
         }
         console.log("QuaggaJS initialized.");
-        Quagga.start(); // Start the scanner
+        Quagga.start();
       }
     );
 
-    // Handle barcode detection
+    Quagga.onProcessed(function (result) {
+      const videoElement = document.querySelector("#barcode-scanner");
+      const overlay = Quagga.canvas.dom.overlay;
+      const ctx = overlay.getContext("2d");
+
+      if (result && result.boxes) {
+        ctx.clearRect(0, 0, overlay.width, overlay.height);
+
+        // Find the main barcode box
+        const mainBox = result.boxes
+          .filter((box) => box !== result.box)
+          .map((box) => box.box)[0];
+
+        if (mainBox) {
+          const [topLeft, topRight, bottomRight, bottomLeft] = mainBox;
+
+          // Calculate dimensions of the detected barcode
+          const barcodeWidth = Math.abs(topRight[0] - topLeft[0]);
+          const barcodeHeight = Math.abs(bottomLeft[1] - topLeft[1]);
+
+          // Resize the video feed dynamically
+          videoElement.style.width = `${barcodeWidth}px`;
+          videoElement.style.height = `${barcodeHeight}px`;
+
+          // Draw barcode overlay
+          ctx.strokeStyle = "red";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(topLeft[0], topLeft[1]);
+          ctx.lineTo(topRight[0], topRight[1]);
+          ctx.lineTo(bottomRight[0], bottomRight[1]);
+          ctx.lineTo(bottomLeft[0], bottomLeft[1]);
+          ctx.closePath();
+          ctx.stroke();
+        }
+      }
+    });
+
     Quagga.onDetected(function (data) {
       const barcode = data.codeResult.code;
       console.log("Barcode detected:", barcode);
 
-      // Display the barcode result
       document.getElementById("barcode-result").textContent =
         "Detected Barcode: " + barcode;
 
-      // Play beep sound
-      const beepSound = new Audio("./beep-07a.mp3"); // Path to your sound file
+      const beepSound = new Audio("./beep-07a.mp3");
       beepSound.play();
 
-      // Stop the scanner
       Quagga.stop();
       document.getElementById("barcode-scanner").style.display = "none";
       console.log("Scanner stopped.");
-    });
-
-    // Debugging: Show processed frames
-    Quagga.onProcessed(function (result) {
-      if (result) {
-        const drawingCanvas = Quagga.canvas.dom.overlay;
-        const drawingCtx = drawingCanvas.getContext("2d");
-
-        // Clear the canvas
-        drawingCtx.clearRect(
-          0,
-          0,
-          drawingCanvas.width,
-          drawingCanvas.height
-        );
-
-        // Draw detected boxes
-        if (result.boxes) {
-          result.boxes
-            .filter((box) => box !== result.box)
-            .forEach((box) => {
-              Quagga.ImageDebug.drawPath(
-                box,
-                { x: 0, y: 1 },
-                drawingCtx,
-                { color: "green", lineWidth: 2 }
-              );
-            });
-        }
-
-        // Highlight the barcode box
-        if (result.box) {
-          Quagga.ImageDebug.drawPath(
-            result.box,
-            { x: 0, y: 1 },
-            drawingCtx,
-            { color: "red", lineWidth: 2 }
-          );
-        }
-
-        // Draw detection result
-        if (result.codeResult && result.codeResult.code) {
-          drawingCtx.font = "24px Arial";
-          drawingCtx.fillStyle = "blue";
-          drawingCtx.fillText(
-            result.codeResult.code,
-            10,
-            40
-          );
-        }
-      }
     });
   } else {
     console.error("getUserMedia not supported by this browser.");
