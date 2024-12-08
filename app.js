@@ -1,5 +1,4 @@
 document.addEventListener("DOMContentLoaded", function () {
-  const videoElement = document.getElementsByTagName("video");
   if (
     navigator.mediaDevices &&
     typeof navigator.mediaDevices.getUserMedia === "function"
@@ -12,7 +11,7 @@ document.addEventListener("DOMContentLoaded", function () {
           target: document.querySelector("#barcode-scanner"),
           constraints: {
             facingMode: "environment",
-            width: 400,
+            width: 100,
             height: 150,
           },
         },
