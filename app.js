@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
+  const videoElement = document.getElementsByTagName("video");
   if (
     navigator.mediaDevices &&
     typeof navigator.mediaDevices.getUserMedia === "function"
@@ -12,7 +13,7 @@ document.addEventListener("DOMContentLoaded", function () {
           constraints: {
             facingMode: "environment",
             width: 500,
-            height: 100,
+            height: 500,
           },
         },
         locator: {
